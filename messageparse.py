@@ -23,10 +23,10 @@ def clean_message(message):
 		message += '.'
 	return message.encode('ascii', 'ignore')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 	parser = ArgumentParser(prog='messageparse')
-	parser.add_argument("-n", "--name", dest="name", required=True)
-	parser.add_argument("-f", "--file", dest="filename", required=True)
+	parser.add_argument('-n', '--name', dest='name', required=True)
+	parser.add_argument('-f', '--file', dest='filename', default='/dev/stdin')
 	values = parser.parse_args()
 	soup = BeautifulSoup(open(values.filename))
 	p_tags = filter(lambda x: get_sender(x) == values.name, soup.find_all('p'))
