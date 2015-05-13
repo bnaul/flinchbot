@@ -2,13 +2,13 @@ import random
 import tweepy
 import textwrap
 import logging
+import re
 from markovgen import markovgen
 
 ACCESS_TOKEN = ''
 CONSUMER_KEY = ''
 CONSUMER_SECRET = ''
 ACCESS_TOKEN_SECRET = ''
-
 USER_NAME = ''
 DATA_FILE = ''
 
@@ -17,6 +17,9 @@ CHAIN_LEN = 3
 MIN_WORDS = 4
 MAX_WORDS = 20
 MAX_TWEET_LENGTH = 140
+MAX_THREAD_LEN = 8
+
+STOP_CHARS = ['.', '!', '?'] # TODO guess these should be shared with markovgen
 
 class flinchbot(object):
 	def __init__(self, debug):
@@ -37,10 +40,25 @@ class flinchbot(object):
 		return tweet.replace('\n','')
 
 	def truncate_tweet(self, tweet, nchar=MAX_TWEET_LENGTH):
-		return textwrap.wrap(tweet,nchar)[0]
+		truncated = textwrap.wrap(tweet, nchar)[0]
+		# looks better if we truncate at the end of a sentence
+		stop_matches = list(re.finditer('['+''.join(STOP_CHARS)+']', truncated))
+		if len(stop_matches) > 0:
+			truncated = truncated[:stop_matches[-1].start()+1]
+		return truncated
 
 	def get_last_id(self):
 		return self.api.user_timeline(screen_name=USER_NAME, count=1)[0].id
+
+	def get_thread(self, status):
+		if status.in_reply_to_status_id is None:
+			return [status]
+		else:
+			parent = self.api.statuses_lookup((status.in_reply_to_status_id,))
+			if len(parent) > 0:
+				return [status] + self.get_thread(parent[0])
+			else:
+				return [status]
 
 	def post(self):
 		tweet = self.truncate_tweet(self.random_tweet())
@@ -58,14 +76,25 @@ class flinchbot(object):
 		try:
 			self.last_id = self.get_last_id()
 			self.mentions = self.api.mentions_timeline(since_id=self.last_id)
-		except:
-			logging.debug("Failed to download mentions")
-		for m in self.mentions:
+		except Exception, e:
+			logging.debug("Failed to download mentions: " + str(e))
+		threads = [self.get_thread(m) for m in self.mentions]
+		child_map = {}
+		for thread in threads:
+			for i in range(len(thread)):
+				for j in range(i):
+					if thread[i].id not in child_map:
+						child_map[thread[i].id] = set()
+					child_map[thread[i].id].add(thread[j].id)
+		for m, thread in zip(self.mentions, threads):
+			if len(thread) > MAX_THREAD_LEN or m.id in child_map.keys():
+				continue
 			names = ['@' + m.user.screen_name] + filter(lambda x: x[0] == '@', m.text.split())
-			names.remove('@' + USER_NAME)
+			if ('@' + USER_NAME) in names: # apparently mentions don't need to contain your name?
+				names.remove('@' + USER_NAME)
 			hashtags = filter(lambda word: word[0] == '#', m.text.split())
 # if tweet is too long, we want to truncate the message, not the hashtags
-			max_length = MAX_TWEET_LENGTH - (sum([len(x) for x in names+hashtags]) + len(names) + len(hashtags))
+			max_length = MAX_TWEET_LENGTH - (sum([len(x) for x in hashtags]) + len(hashtags))
 			tweet = self.truncate_tweet(' '.join(names) + ' ' + self.random_tweet(), max_length) + ' ' + ' '.join(hashtags)
 			if not self.debug:
 				logging.debug("Responding to %i: %s" % (m.id, tweet))

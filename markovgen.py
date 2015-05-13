@@ -1,7 +1,7 @@
 import random, sys
 from argparse import ArgumentParser
 
-# after num_words, we keep going until we reach the end of a sentence
+# After num_words, we keep going until we reach the end of a sentence
 STOP_CHARS = ['.', '!', '?']
 
 class markovgen(object):
@@ -20,9 +20,13 @@ class markovgen(object):
 		return database
 
 	def add_word(self, words):
+		if tuple(words[-(self.chain_len-1):]) in self.database:
 			words.append(random.choice(self.database[tuple(words[-(self.chain_len-1):])]))
+# Sometimes we get stuck (e.g. the words at the very end of the corpus); just choose randomly
+		else:
+			random.choice(self.database.keys())[0]
 
-	def generate_markov_text(self, num_words, seed):
+	def generate_markov_text(self, num_words, seed=None):
 		if seed:
 			matches = filter(lambda key: seed.lower() in key or seed.capitalize() in key, self.database.keys())
 			if len(matches) == 0:
@@ -34,6 +38,7 @@ class markovgen(object):
 			self.add_word(words)
 		while not any([c in words[-1] for c in STOP_CHARS]):
 			self.add_word(words)
+		words[0] = words[0].capitalize()
 		return ' '.join(words)
 
 def main():
