@@ -28,7 +28,7 @@ if __name__ == '__main__':
 	parser.add_argument('-n', '--name', dest='name', required=True)
 	parser.add_argument('-f', '--file', dest='filename', default='/dev/stdin')
 	values = parser.parse_args()
-	soup = BeautifulSoup(open(values.filename))
+	soup = BeautifulSoup(open(values.filename), 'html.parser')
 	p_tags = filter(lambda x: get_sender(x) == values.name, soup.find_all('p'))
 	cleaned = [clean_message(p.text) for p in p_tags]
 	valid = filter(is_valid, cleaned)

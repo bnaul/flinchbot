@@ -4,7 +4,9 @@ Python Twitter bot originally intended to replicate the in{,s}anity of @johnflin
 
 1. `markovgen.py`: class that reads in a plain text corpus and generates random sentences based on the input
 2. `flinchbot.py`: class that connects to a Twitter account, checks for and responds to mentions, and occasionally posts a random tweet
-3. `messageparse.py`: simple script for extracting messages from a Facebook data dump `messages.htm` file and outputting plain text
+3. `main.py`: Flask app that responds to HTTP GET's with random messages
+4. `messageparse.py`: script for extracting messages from a Facebook data dump `messages.htm` file and outputting plain text
+5. `slackparse.py`: script for extracting messages from a Slack zip archive and outputting plain text
 
 ## Examples
 
@@ -14,5 +16,7 @@ Python Twitter bot originally intended to replicate the in{,s}anity of @johnflin
 
 ## Possible Extensions
 
-1. Would be nice to have responses be vaguely context aware. One possible approach: identify most significant/unusual words, find a list of related words, and seed the sentence generator with one of them.
-2. Cache data structure somewhere so that it doesn't have to be constructed from text each time. More complicated logic like the above idea would likely require this to avoid excessive computational cost.
+1. Cache data structure somewhere so that it doesn't have to be constructed from text each time. More complicated logic like the above idea would likely require this to avoid excessive computational cost.
+
+## References
+- Flask app code adapted from https://github.com/pistatium/python_slack_bot.
