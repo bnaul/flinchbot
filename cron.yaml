@@ -1,4 +1,0 @@
-cron:
-- description: flinchbot scan for updates
-  url: /
-  schedule: every 1 minutes
