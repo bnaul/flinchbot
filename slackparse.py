@@ -15,12 +15,12 @@ if __name__ == '__main__':
     messages = [el for f in data for el in f]
     texts = [m['text'].strip() for m in messages if 'user' in m and 'subtype'
              not in m and m['user'] == user_id]
-    for u in users:
-        texts = [re.sub('<@{}>'.format(u['id']), '@{}'.format(u['name']), t) for t in texts]
-    texts = [re.sub('<[^>]*>', '', t) for t in texts]
-#    texts = filter(is_valid, texts)
+#    for u in users:
+#        texts = [re.sub('<@{}>'.format(u['id']), '@{}'.format(u['name']), t) for t in texts]
+    texts = [re.sub('<http://.*>', '', t) for t in texts]
     for t in texts:
         try:
-            print(t)
+            if len(t) > 0:
+                print(t)
         except:
             pass

@@ -1,6 +1,6 @@
+import os
 import random
 import re
-import sys
 from argparse import ArgumentParser
 
 
@@ -12,12 +12,14 @@ class markovgen(object):
     def __init__(self, filename, chain_len):
         self.chain_len = chain_len
         lines = [l.rstrip() for l in open(filename).readlines()]
+        lines = [s for l in lines for s in re.split(r' *[\.\?!][\'"\)\]]* *', l)]
         lines = [l for l in lines if len(l) > 0]
         for i in range(len(lines)):
             if lines[i][-1].isalnum():
                 lines[i] += '.'
             lines[i] += ' ' + STOP_TOKEN
         words = [STOP_TOKEN] + [w for l in lines for w in l.split()]
+
         self.database = self.build_database(words, self.chain_len)
         self.reversed = self.build_database(list(reversed(words)), self.chain_len)
 
@@ -42,6 +44,7 @@ class markovgen(object):
     def generate_markov_text(self, num_words, seed=None):
         if seed:
             matches = filter(lambda key: all(w.lower() in key for w in seed.split())
+                             or all(w in key for w in seed.split())
                              or all(w.capitalize() in key for w in seed.split()),
                              self.reversed.keys())
             if len(matches) > 0:

@@ -16,15 +16,19 @@ from markovgen import markovgen
 app = Flask(__name__)
 
 #DATA_FILE = 'gato_combined.txt'
-DATA_FILE = 'flinch_slack.txt'
+#DATA_FILE = 'flinch_slack.txt'
+DATA_FILE = 'trump.txt'
 CHAIN_LEN = 3
-MIN_WORDS = 4
-MAX_WORDS = 16
+MIN_WORDS = 3
+MAX_WORDS = 10
 
+markov = None
 
 @app.route('/', methods=['GET'])
 def index():
-    markov = markovgen(DATA_FILE, CHAIN_LEN)
+    global markov
+    if markov is None:
+        markov = markovgen(DATA_FILE, CHAIN_LEN)
     num_words = random.randint(MIN_WORDS, MAX_WORDS)
     if 'text' in request.args and len(request.args['text'].strip()) > 0:
         seed = request.args['text']
@@ -60,4 +64,3 @@ def index():
 
 
     return jsonify(**resp_dict)
-
