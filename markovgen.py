@@ -1,11 +1,14 @@
 import os
 import random
 import re
+from collections import defaultdict
 from argparse import ArgumentParser
 
 
 # After num_words, we keep going until we reach the end of a sentence
 STOP_TOKEN = '_____'
+
+PUNCTUATION = '.!?"\''
 
 
 class markovgen(object):
@@ -22,11 +25,16 @@ class markovgen(object):
 
         self.database = self.build_database(words, self.chain_len)
         self.reversed = self.build_database(list(reversed(words)), self.chain_len)
+        self.key_list = defaultdict(list)
+        for k in self.database.keys():
+            for w in k:
+                self.key_list[w.lower().strip(PUNCTUATION)].append(k)
 
     def build_database(self, words, chain_len):
         database = {}
-        for chain in [words[i:i+(chain_len)] for i in range(len(words) - (chain_len - 1))]:
-            key = tuple(chain[:-1])
+        slices = (words[i:] for i in range(chain_len))
+        for chain in zip(*slices):
+            key = tuple(w.strip(PUNCTUATION) for w in chain[:-1])
             if key not in database:
                 database[key] = []
             database[key].append(chain[-1])
@@ -35,30 +43,40 @@ class markovgen(object):
     def add_word(self, words, db=None):
         if db is None:
             db = self.database
-        if tuple(words[-(self.chain_len-1):]) in db:
-            words.append(random.choice(db[tuple(words[-(self.chain_len-1):])]))
-# Sometimes we get stuck (e.g. the words at the very end of the corpus); just choose randomly
+        current_chain = tuple(w.strip(PUNCTUATION) for w in words[-(self.chain_len-1):])
+        if current_chain in db:
+            next_word = random.choice(db[current_chain])
+        # Sometimes we get stuck (e.g. the words at the very end of the corpus); choose randomly
         else:
-            words.append(random.choice(db.keys())[0])
+            raise
+            next_word = STOP_TOKEN
+            #next_word = random.choice(random.choice(db.values()))
+        words.append(next_word)
 
     def generate_markov_text(self, num_words, seed=None):
         if seed:
-            matches = filter(lambda key: all(w.lower() in key for w in seed.split())
-                             or all(w in key for w in seed.split())
-                             or all(w.capitalize() in key for w in seed.split()),
-                             self.reversed.keys())
-            if len(matches) > 0:
-                words = list(random.choice(matches))
+            phrase = tuple(w.lower().strip(PUNCTUATION) for w in seed.split())
+            if phrase in self.database:
+                words = list(phrase)
             else:
-                raise ValueError("Not found.")
+                seed_word = random.choice(seed.split())
+                matches = self.key_list.get(seed_word.lower().strip(PUNCTUATION))
+                matches = [m for m in matches if STOP_TOKEN not in m]
+                if matches:
+                    words = list(random.choice(matches))
+                else:
+                    raise ValueError("Not found.")
         else:
             words = list(random.choice(self.database.keys()))
+
+        words = list(reversed(words))
         while not STOP_TOKEN in words:
             self.add_word(words, db=self.reversed)
         words = [w for w in reversed(words) if w != STOP_TOKEN]
+
         for i in range(num_words):
             self.add_word(words)
-        while not STOP_TOKEN in words:
+        while words[-1] != STOP_TOKEN:
             self.add_word(words)
         words[0] = words[0].capitalize()
         text = ' '.join(words)
@@ -78,7 +96,7 @@ def main():
 
     markov = markovgen(values.filename, values.chain_len)
     text = markov.generate_markov_text(values.num_words, values.seed)
-    print text
+    print(text)
 
 if __name__ == '__main__':
     main()

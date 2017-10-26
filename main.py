@@ -16,11 +16,11 @@ from markovgen import markovgen
 app = Flask(__name__)
 
 #DATA_FILE = 'gato_combined.txt'
-#DATA_FILE = 'flinch_slack.txt'
-DATA_FILE = 'trump.txt'
+#DATA_FILE = 'flinch_combined.txt'
+DATA_FILE = 'trump_full.txt'
 CHAIN_LEN = 3
-MIN_WORDS = 3
-MAX_WORDS = 10
+MIN_WORDS = 5
+MAX_WORDS = 12
 
 markov = None
 
@@ -28,6 +28,7 @@ markov = None
 def index():
     global markov
     if markov is None:
+        print("generating...")
         markov = markovgen(DATA_FILE, CHAIN_LEN)
     num_words = random.randint(MIN_WORDS, MAX_WORDS)
     if 'text' in request.args and len(request.args['text'].strip()) > 0:
@@ -61,6 +62,5 @@ def index():
                 "response_type": "ephemeral",
                 "text": "Search term not found."
         }
-
 
     return jsonify(**resp_dict)

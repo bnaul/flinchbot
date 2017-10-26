@@ -23,6 +23,7 @@ MAX_THREAD_LEN = 10
 # TODO guess these should be shared with markovgen
 STOP_CHARS = ['.', '!', '?']
 
+
 class flinchbot(object):
     def __init__(self, debug):
         self.debug = debug
@@ -75,7 +76,7 @@ class flinchbot(object):
             except Exception, e:
                 logging.debug("Failed to post status: " + str(e))
         else:
-            print tweet
+            print(tweet)
 
     def respond(self):
         try:
@@ -112,7 +113,7 @@ class flinchbot(object):
                 except Exception, e:
                     logging.debug("Failed to post status: " + str(e))
             else:
-                print "Responding to %i: %s" % (m.id, tweet)
+                print("Responding to %i: %s" % (m.id, tweet))
 
 if __name__ == '__main__':
     debug = False
